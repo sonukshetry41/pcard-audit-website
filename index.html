@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSU P-Card Audit</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>OSU P-Card Audit</h1>
+        <p>Analyze purchasing-card transactions</p>
+    </header>
+
+    <nav>
+        <button onclick="showTab('questions')">Ask Questions</button>
+        <button onclick="showTab('dashboard')">Prohibited-Purchase Dashboard</button>
+    </nav>
+
+    <main>
+        <section id="questions" class="tab">
+            <h2>Ask a Question</h2>
+            <p>Ask a question about the P-card transactions.</p>
+
+            <form id="questionForm">
+                <label for="question">Your question</label>
+                <input id="question" type="text"
+                    placeholder="Example: Which employees spent over $50,000?"
+                    required>
+                <button type="submit">Submit Question</button>
+            </form>
+
+            <div id="answer">Your answer will appear here.</div>
+        </section>
+
+        <section id="dashboard" class="tab" hidden>
+            <h2>Prohibited-Purchase Dashboard</h2>
+
+            <label for="year">Select year</label>
+            <select id="year">
+                <option value="2014">2014</option>
+            </select>
+
+            <label for="categoryFilter">Filter by potential category</label>
+            <select id="categoryFilter">
+                <option value="">All categories</option>
+                <option value="Alcohol">Alcohol</option>
+                <option value="Cash/ATM">Cash/ATM</option>
+                <option value="Decorations">Decorations</option>
+                <option value="Donations/Sponsorships">Donations/Sponsorships</option>
+                <option value="Gasoline">Gasoline</option>
+                <option value="Gifts">Gifts</option>
+                <option value="Insurance">Insurance</option>
+                <option value="Late Fees">Late Fees</option>
+                <option value="Mail/Postage">Mail/Postage</option>
+                <option value="Moving">Moving</option>
+                <option value="Personal Purchases">Personal Purchases</option>
+                <option value="Memberships">Memberships</option>
+                <option value="Wages/Benefits">Wages/Benefits</option>
+                <option value="Service/Incentive Awards">Service/Incentive Awards</option>
+                <option value="Not flagged">Not flagged</option>
+            </select>
+
+            <label for="vendorSearch">Search vendor</label>
+            <input id="vendorSearch" type="text" placeholder="Enter vendor name">
+
+            <label for="descriptionSearch">Search description</label>
+            <input id="descriptionSearch" type="text" placeholder="Enter description">
+
+            <button id="searchButton" type="button">Search Transactions</button>
+            <div id="results">Transaction results will appear here.</div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
