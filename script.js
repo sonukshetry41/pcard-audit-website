@@ -79,7 +79,10 @@ let keyword = null;
 const showAll =
     question.includes("show all transactions") ||
     question.includes("all transactions") ||
-    question.includes("list all transactions");
+    question.includes("list all transactions") ||
+    question.includes("show all") ||
+    question.includes("list all") ||
+    question.includes("display all transactions");
 
 
         
