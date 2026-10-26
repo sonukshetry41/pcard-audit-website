@@ -1,4 +1,34 @@
 
+const PROHIBITED_KEYWORDS = {
+    "Alcohol": ["alcohol", "beer", "wine", "liquor", "spirits"],
+    "Cash/ATM": ["atm", "cash advance", "cash withdrawal"],
+    "Decorations": ["decoration", "decorations", "balloon", "ornament"],
+    "Donations/Sponsorships": ["donation", "donations", "sponsorship"],
+    "Gasoline": ["gasoline", "fuel", "petrol", "gas station"],
+    "Gifts": ["gift", "gifts", "gift card", "gift cards"],
+    "Insurance": ["insurance", "insurance premium"],
+    "Late Fees": ["late fee", "late fees", "penalty fee"],
+    "Mail/Postage": ["postage", "stamps", "mailing", "shipping label"],
+    "Moving": ["moving service", "moving company", "relocation"],
+    "Personal Purchases": ["personal purchase", "personal use"],
+    "Memberships": ["membership", "membership fee", "club dues"],
+    "Wages/Benefits": ["wages", "payroll", "employee benefit"],
+    "Service/Incentive Awards": [
+        "service award", "incentive award", "employee award"
+    ]
+};
+
+function identifyCategory(vendor, description) {
+    const text = `${vendor || ""} ${description || ""}`.toLowerCase();
+
+    for (const [category, keywords] of Object.entries(PROHIBITED_KEYWORDS)) {
+        if (keywords.some(keyword => text.includes(keyword))) {
+            return category;
+        }
+    }
+
+    return "Not flagged";
+}
 function showTab(tabName) {
     document.querySelectorAll(".tab").forEach(function(tab) {
         tab.hidden = true;
@@ -21,34 +51,39 @@ const category = document.getElementById("categoryFilter").value;
     const description = document.getElementById("descriptionSearch").value.trim();
     const results = document.getElementById("results");
 
-    results.textContent = "Searching transactions...";
-
-    const params = new URLSearchParams({
-        year: year,
-        vendor: vendor,
-        description: description
-    });
+        results.textContent = "Loading transactions...";
 
     try {
-        const response = await fetch("/api/search?" + params.toString());
+        const response = await fetch("data/transactions-" + year + ".json");
 
         if (!response.ok) {
-            throw new Error("The server returned an error.");
+            throw new Error("Could not load transaction data for " + year);
         }
 
-        const transactions = await response.json();
+        const rows = await response.json();
 
-if (!Array.isArray(transactions)) {
-    throw new Error(transactions.error || "Unexpected server response.");
-}
+        const transactions = rows.map(function(row) {
+            return {
+                Year: row[0],
+                Vendor: row[1] || "",
+                Description: row[2] || "",
+                Amount: row[3],
+                TransactionDate: row[4] || "",
+                MCC: row[5] || "",
+                FullName: "",
+                Category: identifyCategory(row[1], row[2])
+            };
+        });
 
-const filteredTransactions = category
-    ? transactions.filter(transaction => transaction.Category === category)
-    : transactions;
+        const filteredTransactions = transactions.filter(function(transaction) {
+            const matchesVendor = transaction.Vendor.toLowerCase().includes(vendor.toLowerCase());
+            const matchesDescription = transaction.Description.toLowerCase().includes(description.toLowerCase());
+            const matchesCategory = !category || transaction.Category === category;
+
+            return matchesVendor && matchesDescription && matchesCategory;
+        });
 
         results.replaceChildren();
-
-
 const flaggedTransactions = filteredTransactions.filter(
     transaction => transaction.Category !== "Not flagged"
 );
