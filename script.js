@@ -37,12 +37,151 @@ function showTab(tabName) {
     document.getElementById(tabName).hidden = false;
 }
 
-document.getElementById("questionForm").addEventListener("submit", function(event) {
+
+document.getElementById("questionForm").addEventListener("submit", async function(event) {
     event.preventDefault();
 
-    document.getElementById("answer").textContent =
-        "Your question has been received. Natural-language question answering will be added next.";
+    const answer = document.getElementById("answer");
+    const question = document.getElementById("question").value.trim().toLowerCase();
+    const year = document.getElementById("year").value;
+
+    answer.replaceChildren();
+
+    if (!question) {
+        answer.textContent = "Please enter a question.";
+        return;
+    }
+
+    answer.textContent = "Searching transaction data...";
+
+    try {
+        const response = await fetch("data/transactions-" + year + ".json");
+
+        if (!response.ok) {
+            throw new Error("Transaction data could not be loaded.");
+        }
+
+        const rows = await response.json();
+
+        // Data columns: Year, Vendor, Description, Amount, Date, MCC
+        let transactions = rows.map(row => ({
+            Year: row[0],
+            Vendor: row[1] || "",
+            Description: row[2] || "",
+            Amount: Number(row[3]) || 0,
+            TransactionDate: row[4] || "",
+            MCC: row[5] || ""
+        }));
+
+        let title = "Matching transactions";
+        let threshold = null;
+        let keyword = null;
+
+        const amountMatch = question.match(
+            /(?:over|above|greater than|more than|exceed(?:ing)?)\s*\$?\s*([\d,]+(?:\.\d+)?)/i
+        );
+
+        if (amountMatch) {
+            threshold = Number(amountMatch[1].replace(/,/g, ""));
+            transactions = transactions.filter(t => t.Amount > threshold);
+            title = "Transactions over $" + threshold.toLocaleString();
+        } else {
+            const prohibitedKeywords = [
+                "alcohol", "beer", "wine", "liquor", "cash",
+                "atm", "decoration", "donation", "sponsorship",
+                "gasoline", "fuel", "gift", "insurance",
+                "late fee", "postage", "moving", "personal",
+                "membership", "wages", "payroll", "award"
+            ];
+
+            keyword = prohibitedKeywords.find(word => question.includes(word));
+
+            if (keyword) {
+                transactions = transactions.filter(t =>
+                    (t.Description + " " + t.Vendor)
+                        .toLowerCase().includes(keyword)
+                );
+                title = 'Transactions mentioning "' + keyword + '"';
+            } else {
+                const vendorMatch = question.match(
+                    /(?:from|vendor|at|purchase(?:s)? from)\s+(.+?)(?:\?|$)/
+                );
+
+                if (vendorMatch) {
+                    keyword = vendorMatch[1]
+                        .replace(/[?.!]+$/, "")
+                        .trim();
+
+                    transactions = transactions.filter(t =>
+                        t.Vendor.toLowerCase().includes(keyword)
+                    );
+                    title = 'Transactions from "' + keyword + '"';
+                } else {
+                    answer.textContent =
+                        "I couldn't identify that question. Try asking for transactions over a dollar amount, a vendor, or a prohibited-purchase keyword.";
+                    return;
+                }
+            }
+        }
+
+        const heading = document.createElement("h3");
+        heading.textContent = title + " (" + transactions.length + " found)";
+        answer.replaceChildren(heading);
+
+        if (transactions.length === 0) {
+            const message = document.createElement("p");
+            message.textContent = "No matching transactions were found.";
+            answer.appendChild(message);
+            return;
+        }
+
+        const table = document.createElement("table");
+        const header = document.createElement("tr");
+
+        ["Date", "Vendor", "Description", "Amount", "MCC"].forEach(label => {
+            const th = document.createElement("th");
+            th.textContent = label;
+            header.appendChild(th);
+        });
+
+        table.appendChild(header);
+
+        transactions.slice(0, 100).forEach(t => {
+            const tr = document.createElement("tr");
+
+            [
+                t.TransactionDate,
+                t.Vendor,
+                t.Description,
+                t.Amount.toLocaleString(undefined, {
+                    style: "currency",
+                    currency: "USD"
+                }),
+                t.MCC
+            ].forEach(value => {
+                const td = document.createElement("td");
+                td.textContent = value;
+                tr.appendChild(td);
+            });
+
+            table.appendChild(tr);
+        });
+
+        answer.appendChild(table);
+
+        if (transactions.length > 100) {
+            const note = document.createElement("p");
+            note.textContent =
+                "Showing the first 100 results. Refine your question to narrow the results.";
+            answer.appendChild(note);
+        }
+    } catch (error) {
+        answer.textContent =
+            "Unable to search the data. Please check your connection and try again.";
+        console.error(error);
+    }
 });
+
 
 document.getElementById("searchButton").addEventListener("click", async function() {
     const year = document.getElementById("year").value;
