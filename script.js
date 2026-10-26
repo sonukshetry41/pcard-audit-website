@@ -73,15 +73,24 @@ document.getElementById("questionForm").addEventListener("submit", async functio
             MCC: row[5] || ""
         }));
 
-        let title = "Matching transactions";
-        let threshold = null;
-        let keyword = null;
+let title = "Matching transactions";
+let threshold = null;
+let keyword = null;
+const showAll =
+    question.includes("show all transactions") ||
+    question.includes("all transactions") ||
+    question.includes("list all transactions");
+
+
+        
 
         const amountMatch = question.match(
             /(?:over|above|greater than|more than|exceed(?:ing)?)\s*\$?\s*([\d,]+(?:\.\d+)?)/i
         );
 
-        if (amountMatch) {
+        if (showAll) {
+    title = "All transactions";
+} else if (amountMatch) {
             threshold = Number(amountMatch[1].replace(/,/g, ""));
             transactions = transactions.filter(t => t.Amount > threshold);
             title = "Transactions over $" + threshold.toLocaleString();
