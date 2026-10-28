@@ -316,8 +316,8 @@ results.appendChild(summary);
                 const cell = document.createElement("td");
 
                 cell.textContent = index === 4
-                    ? (Number(value) || 0).toFixed(2)
-                    : (value ?? "");
+    ? (Number(value) || 0).toFixed(2)
+    : ((value === null || value === undefined) ? "" : value);
 
                 row.appendChild(cell);
             });
